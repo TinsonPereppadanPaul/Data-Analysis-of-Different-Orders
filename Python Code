@@ -1,0 +1,70 @@
+#import libraries
+#pip install pandas
+import pandas as pd
+
+# To read orders.csv file
+df = pd.read_csv(r"C:\Users\HP\Desktop\DATA ANALYSIS\5.PYTHON PLUS SQL\orders.csv.zip")
+df.head()
+df
+
+#extract file from zip file
+import zipfile
+zip_ref = zipfile.ZipFile('orders.csv.zip') 
+zip_ref.extractall() # extract file to dir
+zip_ref.close() # close file
+
+# to view column Ship Mode  unique datas
+df['Ship Mode'].unique()
+
+#read data from the file and handle null values
+import numpy as np
+df['Ship Mode'] = df['Ship Mode'].replace(['Not Available', 'unknown'], np.nan)
+df['Ship Mode'].unique()
+
+#rename columns names ..make them lower case and replace space with underscore
+#df.rename(columns={'Order Id':'order_id', 'City':'city'})
+#df.columns=df.columns.str.lower()
+#df.columns=df.columns.str.replace(' ','_')
+df.head(5)
+
+#derive new columns discount , sale price and profit
+#df['discount']=df['list_price']*df['discount_percent']*.01
+#df['sale_price']= df['list_price']-df['discount']
+df['profit']=df['sale_price']-df['cost_price']
+df
+
+#convert order date from object data type to datetime
+df['order_date']=pd.to_datetime(df['order_date'],format="%Y-%m-%d")
+
+#drop cost price list price and discount percent columns
+df.drop(columns=['list_price','cost_price','discount_percent'],inplace=True)
+
+#load the data into sql server 
+import sqlalchemy as sal
+import urllib.parse
+
+# Replace these with your real credentials
+username = 'root'          # your MySQL username
+password = 'Tinson@'  # your MySQL password
+host = 'localhost'         # usually localhost
+port = 3306                # default MySQL port
+database = 'airline'       # your database name
+
+# Encode password for special characters
+password_encoded = urllib.parse.quote_plus(password)
+
+# Create the engine
+engine = sal.create_engine(
+    f"mysql+mysqlconnector://{username}:{password_encoded}@{host}:{port}/{database}"
+)
+
+# Test connection
+try:
+    conn = engine.connect()
+    print("Connected successfully!")
+    conn.close()
+except Exception as e:
+    print("Connection failed:", e)
+
+#load the data into sql server
+df.to_sql('df_orders',con=conn,index=False,if_exists='replace')
